@@ -3,8 +3,8 @@
 ## Índice
 
 1. [Introducción](#1-introducción)
-2. [Instalación y Configuración](#2-instalación-y-configuración)
-3. [Estructura de Archivos y Carpetas](#3-estructura-de-archivos-y-carpetas)
+2. [Estructura de Archivos y Carpetas](#2-Estructura-de-Archivos-y-Carpetas)
+3. [Instalación y Configuración](#3-Instalación-y-Configuración)
 4. [Conceptos Fundamentales](#4-conceptos-fundamentales)
 5. [Flujo de Trabajo en FastAPI](#5-flujo-de-trabajo-en-fastapi)
 6. [Comandos Esenciales](#6-comandos-esenciales)
@@ -180,9 +180,21 @@ book_crud/
         finally:
             db.close()  # Cierra la sesión al terminar
 
+   # Esta función crea una sesión para trabajar con la base de datos, la devuelve mientras haces algo (yield db) y la cierra automáticamente al terminar.
+   # Se usa mucho en frameworks como FastAPI para que cada petición tenga su propia sesión limpia.
+
    ```
 
 ## 4. Conceptos Fundamentales
+
+- **create_engine**: Piensa en esto como construir la tubería que conecta tu código con la base de datos.
+
+- **declarative_base**: Es una plantilla para crear tus tablas como si fueran clases de Python.
+
+- **sessionmaker**: Es como un generador de “mesas de trabajo” para interactuar con la base de datos sin tocarla directamente. Con la sesión puedes consultar, insertar, actualizar o borrar datos sin afectar inmediatamente la base de datos real hasta que confirmes los cambios.
+  - **autocommit=False** → No confirma automáticamente los cambios, tú decides cuándo guardar.
+  - **autoflush=False** → No envía automáticamente los cambios hasta que decidas.
+  - **bind=engine** → Le decimos a la sesión que use esa tubería que creamos antes para conectarse.
 
 - **Modelos**: Representan las tablas en la base de datos.
 - **Schemas**: Definen la estructura de los datos para la serialización/deserialización.
@@ -227,6 +239,10 @@ class Item(Base):
 ```python
 from pydantic import BaseModel
 
+# Hereda todo de ItemBase.
+# Se usa cuando el usuario envía datos para crear un item.
+# “pass” significa que no añadimos nada nuevo, solo usamos lo que está en ItemBase.
+
 class ItemBase(BaseModel):
     title: str
     description: str = None
@@ -234,11 +250,11 @@ class ItemBase(BaseModel):
 class ItemCreate(ItemBase):
     pass
 
-class Item(ItemBase):
+class Item(ItemBase): # Hereda de ItemBase (title y description) y añade el id que ya existe en la base de datos.
     id: int
 
     class Config:
-        orm_mode = True
+        orm_mode = True # permite que Pydantic lea directamente objetos de SQLAlchemy como si fueran diccionarios, para enviarlos en respuestas JSON.
 ```
 
 ### Operaciones CRUD (`controllers/crud_controller.py`)
@@ -250,7 +266,27 @@ from models.curd_model import Item
 
 class CrudControllers:
 
+'''
+Si no usaramos @static methos tendriamos que escribir:
+
+def __init__(self, db: Session): # El trabajador ya tiene su caja de herramientas (self.db) y no necesita traer nada externo cada vez.
+        self.db = db
+
+y el controlador se vería así:
+
+ def create_item(self, item: crud_schema.ItemCreate): # No hace falta pasar db:session cada vez
+        db_item = Item(**item.dict())
+        self.db.add(db_item)
+        self.db.commit()
+        self.db.refresh(db_item)
+        return db_item
+'''
+
     @staticmethod
+    async def get_items(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(Item).offset(skip).limit(limit).all()
+
+    @staticmethod # Cada función es como un trabajador independiente que llega con su propio conjunto de herramientas (db) y hace su tarea.
     async def get_item(db: Session, item_id: int):
         return db.query(Item).filter(Item.id == item_id).first()
 
@@ -262,7 +298,60 @@ class CrudControllers:
         db.refresh(db_item)
         return db_item
 
-# Implementar otras operaciones CRUD aquí
+   @staticmethod
+   async def update_item(db: Session, item_id: int, item: crud_schema.ItemCreate):
+       db_item = db.query(Item).filter(Item.id == item_id).first()
+       if db_item:
+           db_item.title = item.title
+           db_item.description = item.description
+           db.commit()
+           db.refresh(db_item)
+       return db_item
+   
+   @staticmethod
+   async def delete_item(db: Session, item_id: int):
+       db_item = db.query(Item).filter(Item.id == item_id).first()
+       if db_item:
+           db.delete(db_item)
+           db.commit()
+       return db_item
+```
+
+**También** nuestros controladores pueden ser funciones independientes, no tienen por qué estar dentro de una clase:
+
+```python
+from sqlalchemy.orm import Session
+from models.curd_model import Item
+from schemas import crud_schema
+
+def create_item(db: Session, item: crud_schema.ItemCreate):
+    db_item = Item(**item.dict())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+def get_item(db: Session, item_id: int):
+    return db.query(Item).filter(Item.id == item_id).first()
+
+def get_items(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(Item).offset(skip).limit(limit).all()
+
+def update_item(db: Session, item_id: int, item: crud_schema.ItemCreate):
+    db_item = db.query(Item).filter(Item.id == item_id).first()
+    if db_item:
+        db_item.title = item.title
+        db_item.description = item.description
+        db.commit()
+        db.refresh(db_item)
+    return db_item
+
+def delete_item(db: Session, item_id: int):
+    db_item = db.query(Item).filter(Item.id == item_id).first()
+    if db_item:
+        db.delete(db_item)
+        db.commit()
+    return db_item
 ```
 
 ### Rutas de la API (`routes/crud_routes.py`)
@@ -290,7 +379,53 @@ def read_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     return db_item
 
-# Implementar otras rutas aquí
+# Obtener lista de items
+@router.get("/items/", response_model=List[crud_schema.Item])
+def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    items = CrudControllers.get_items(db, skip=skip, limit=limit)
+    return items
+
+# Actualizar un item
+@router.put("/items/{item_id}", response_model=crud_schema.Item)
+def update_item(item_id: int, item: crud_schema.ItemCreate, db: Session = Depends(get_db)):
+    db_item = CrudControllers.update_item(db, item_id, item)
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return db_item
+
+# Borrar un item
+@router.delete("/items/{item_id}", response_model=crud_schema.Item)
+def delete_item(item_id: int, db: Session = Depends(get_db)):
+    db_item = CrudControllers.delete_item(db, item_id)
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return db_item
+```
+
+Si definimos los controladores como funciones en lugar de una clase, entonces nuestras rutas se van a ver de esta manera:
+
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+from database.database import get_db
+from schemas import crud_schema
+from crud_controller import create_item, get_item, get_items, update_item, delete_item
+
+router = APIRouter()
+
+@router.post("/items/", response_model=crud_schema.Item)
+def new_item(item: crud_schema.ItemCreate, db: Session = Depends(get_db)):
+    return create_item(db, item)
+
+@router.get("/items/{item_id}", response_model=crud_schema.Item)
+def read_item(item_id: int, db: Session = Depends(get_db)):
+    db_item = get_item(db, item_id)
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return db_item
+
+# Resto de rutas: get_items, update_item, delete_item
 ```
 
 ### Archivo principal app.py (`app.py`)
@@ -302,6 +437,7 @@ app = FastAPI()
 
 #IMPORTANT: Aquí referenciamos el archivo "database" no la variable "db"
 from database import database
+
 def run():
     pass
 if __name__ == '__main__':
@@ -311,6 +447,7 @@ if __name__ == '__main__':
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
 app.include_router(router, prefix="/v1")
 ```
 

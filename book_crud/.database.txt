@@ -1,0 +1,7 @@
+'1','Intel Core i9-13900K','High-performance desktop CPU for gaming and professional workloads.'
+'2','AMD Ryzen 9 7950X','16-core processor optimized for multitasking and high-end computing.'
+'3','NVIDIA RTX 4090 GPU','Top-tier graphics card for AI, rendering, and gaming applications.'
+'4','Samsung 980 Pro NVMe SSD','High-speed M.2 SSD designed for data-intensive tasks and fast storage.'
+'6','Intel Xeon W-3300','Server-grade CPU optimized for workstation and enterprise workloads.'
+'7','Qualcomm Snapdragon 8 Gen 3','Advanced mobile processor for flagship smartphones and AI applications.'
+'8','Apple M3 Pro','Power-efficient processor for high-performance laptops and desktops.'

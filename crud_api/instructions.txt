@@ -1,0 +1,28 @@
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+python -m pip install --upgrade pip
+
+
+.\.venv\Scripts\Activate.ps1
+pip install sqlalchemy fastapi uvicorn
+
+pip install python-dotenv
+
+pip install pymysql
+
+
+pip install cryptography
+
+uvicorn crud_api.main:app --reload
+
+
+
+
+uvicorn
+
+.\venv\Scripts\Activate.ps1
+
+& "C:\Users\raml_\OneDrive\Documentos\gitProjectsF5\clases F5\CrudApiBase\book_crud\venv\Scripts\python.exe" -m pip install --upgrade pip
+
+

@@ -1,0 +1,46 @@
+'1','Intel Core i9-13900K','High-performance desktop CPU for gaming and professional workloads.'
+'2','AMD Ryzen 9 7950X','16-core processor optimized for multitasking and high-end computing.'
+'3','NVIDIA RTX 4090 GPU','Top-tier graphics card for AI, rendering, and gaming applications.'
+'4','Samsung 980 Pro NVMe SSD','High-speed M.2 SSD designed for data-intensive tasks and fast storage.'
+'6','Intel Xeon W-3300','Server-grade CPU optimized for workstation and enterprise workloads.'
+'7','Qualcomm Snapdragon 8 Gen 3','Advanced mobile processor for flagship smartphones and AI applications.'
+'8','Apple M3 Pro','Power-efficient processor for high-performance laptops and desktops.'
+
+
+[
+  {
+    "id": 1,
+    "title": "Intel Core i9-13900K",
+    "description": "High-performance desktop CPU for gaming and professional workloads."
+  },
+  {
+    "id": 2,
+    "title": "AMD Ryzen 9 7950X",
+    "description": "16-core processor optimized for multitasking and high-end computing."
+  },
+  {
+    "id": 3,
+    "title": "NVIDIA RTX 4090 GPU",
+    "description": "Top-tier graphics card for AI, rendering, and gaming applications."
+  },
+  {
+    "id": 4,
+    "title": "Samsung 980 Pro NVMe SSD",
+    "description": "High-speed M.2 SSD designed for data-intensive tasks and fast storage."
+  },
+  {
+    "id": 6,
+    "title": "Intel Xeon W-3300",
+    "description": "Server-grade CPU optimized for workstation and enterprise workloads."
+  },
+  {
+    "id": 7,
+    "title": "Qualcomm Snapdragon 8 Gen 3",
+    "description": "Advanced mobile processor for flagship smartphones and AI applications."
+  },
+  {
+    "id": 8,
+    "title": "Apple M3 Pro",
+    "description": "Power-efficient processor for high-performance laptops and desktops."
+  }
+]

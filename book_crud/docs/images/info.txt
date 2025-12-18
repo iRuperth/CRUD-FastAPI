@@ -1,0 +1,11 @@
+
+
+database/ → Handles the connection to the database, creates sessions, and provides the base that models use. Essentially, it’s the “bridge” between your app and the DB.
+
+models/ → Contains classes that represent database tables. Each class defines the fields and data types of a table.
+
+schemas/ → Defines how incoming and outgoing data is validated and structured. Useful to ensure that received data is correct and the output has a consistent format.
+
+controllers/ → Contains the business logic. For example, how to create, read, update, or delete records (CRUD), or any more complex operations involving multiple models.
+
+routes/ → Defines the API endpoints, the URLs, and which HTTP method (GET, POST, PUT, DELETE) executes each action. It basically connects the controller logic with external requests.
